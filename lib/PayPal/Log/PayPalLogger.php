@@ -5,6 +5,7 @@ namespace PayPal\Log;
 use PayPal\Core\PayPalConfigManager;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
+use Stringable;
 
 class PayPalLogger extends AbstractLogger
 {
@@ -57,6 +58,16 @@ class PayPalLogger extends AbstractLogger
         $this->initialize();
     }
 
+    public function log($level, string|Stringable $message, array $context = []): void
+    {
+        if ($this->isLoggingEnabled) {
+            // Checks if the message is at level below configured logging level
+            if (array_search($level, $this->loggingLevels) <= array_search($this->loggingLevel, $this->loggingLevels)) {
+                error_log("[" . date('d-m-Y H:i:s') . "] " . $this->loggerName . " : " . strtoupper($level) . ": $message\n", 3, $this->loggerFile);
+            }
+        }
+    }
+
     public function initialize()
     {
         $config = PayPalConfigManager::getInstance()->getConfigHashmap();
@@ -68,16 +79,6 @@ class PayPalLogger extends AbstractLogger
                 $this->loggingLevel = (isset($loggingLevel) && defined("\\Psr\\Log\\LogLevel::$loggingLevel")) ?
                     constant("\\Psr\\Log\\LogLevel::$loggingLevel") :
                     LogLevel::INFO;
-            }
-        }
-    }
-
-    public function log($level, $message, array $context = array())
-    {
-        if ($this->isLoggingEnabled) {
-            // Checks if the message is at level below configured logging level
-            if (array_search($level, $this->loggingLevels) <= array_search($this->loggingLevel, $this->loggingLevels)) {
-                error_log("[" . date('d-m-Y H:i:s') . "] " . $this->loggerName . " : " . strtoupper($level) . ": $message\n", 3, $this->loggerFile);
             }
         }
     }
